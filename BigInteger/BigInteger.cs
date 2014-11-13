@@ -16,14 +16,17 @@ namespace Uly.Numerics
 
         //private static BigInteger _one = new BigInteger("1");
 
+        /// <summary>
+        /// 原始数据表示
+        /// </summary>
         public List<int> RawValue {
             get { return _value; }
-            set { _value = value; }
         }
 
+        #region 构造函数
         public BigInteger(string val)
         {
-            string va = val.Trim().Replace(" ","").Replace(",",""); //去掉空格和逗号
+            string va = Format(val);
             string v = (va[0] == '-') ? va.Substring(1) : va;
             //每四位取为一个int
             _value = new List<int>();
@@ -33,11 +36,11 @@ namespace Uly.Numerics
                 {
                     if (i<0)
                     {
-                        _value.Add(int.Parse(v.Substring(Math.Max(i, 0), 4 + i)));
+                        _value.Add(int.Parse(v.Substring(0, 4 + i)));
                     }
                     else
                     {
-                        _value.Add(int.Parse(v.Substring(Math.Max(i, 0), 4)));
+                        _value.Add(int.Parse(v.Substring(i, 4)));
                     }
                 }
             }
@@ -63,7 +66,9 @@ namespace Uly.Numerics
             this._value = value;
             this.Shorten();
         }
+        #endregion
 
+        #region 运算函数
         /// <summary>
         /// 长整数 加法
         /// </summary>
@@ -247,17 +252,12 @@ namespace Uly.Numerics
                 : result;
         }
 
-        private bool GreaterOrEqual(BigInteger that)
-        {
-            return IsNegative(Substract(that).RawValue) ? false : true;
-        }
-
-        private bool IsLessOrEqualToQuotient(BigInteger op1, BigInteger op2)
-        {
-            return op1.GreaterOrEqual(Multiply(op2));
-        }
-
-        private BigInteger Divide(int that)
+        /// <summary>
+        /// 长整数 除法（int正数） 内部使用
+        /// </summary>
+        /// <param name="that"></param>
+        /// <returns></returns>
+        private BigInteger Div(int that)
         {
             List<int> result = new List<int>();
             int remain = 0; //余数
@@ -282,6 +282,19 @@ namespace Uly.Numerics
         /// <returns></returns>
         public BigInteger Divide(BigInteger that)
         {
+            if (that.IsZero())
+            {
+                throw new DivideByZeroException("除数不能为0.");
+            }
+            //如果除数为int型,直接除,效率高
+            int parsed;
+            if (int.TryParse(that.ToString(), out parsed))
+            {
+                return (GetLast(_value) + GetLast(that.RawValue) == 9999)
+    ? new BigInteger(ToComplement(Div(Math.Abs(parsed)).RawValue))
+    : Div(Math.Abs(parsed));
+            }
+            //除数不是int型,暴力二分搜索
             //一律先以正数表示
             BigInteger op1 = IsNegative(_value) ? new BigInteger(ToComplement(_value)) : this;
             BigInteger op2 = IsNegative(that.RawValue) ? new BigInteger(ToComplement(that.RawValue)) : that;
@@ -292,7 +305,7 @@ namespace Uly.Numerics
             //二分法搜索
             while (right.GreaterOrEqual(left))
             {
-                BigInteger x = left.Add(right).Divide(2);
+                BigInteger x = left.Add(right).Div(2);
                 if (x.IsLessOrEqualToQuotient(op1,op2))
                 {
                     left = x.Add(one);
@@ -306,6 +319,89 @@ namespace Uly.Numerics
             return (GetLast(_value) + GetLast(that.RawValue) == 9999)
                 ? new BigInteger(ToComplement(right.RawValue))
                 : right;
+        }
+
+        public BigInteger Divide(int that)
+        {
+            if (that == 0)
+            {
+                throw new DivideByZeroException("除数不能为0.");
+            }
+            if ((that > 0 && this.IsNegative()) || (that < 0) && this.IsPositive())
+            {
+                return new BigInteger(ToComplement(Div(Math.Abs(that)).RawValue));
+            }
+            else
+            {
+                return Div(Math.Abs(that));
+            }
+        }
+
+        #endregion
+
+        #region 辅助函数
+        private bool GreaterOrEqual(BigInteger that)
+        {
+            return IsNegative(Substract(that).RawValue) ? false : true;
+        }
+
+        /// <summary>
+        /// 除法判断用
+        /// </summary>
+        /// <param name="op1"></param>
+        /// <param name="op2"></param>
+        /// <returns></returns>
+        private bool IsLessOrEqualToQuotient(BigInteger op1, BigInteger op2)
+        {
+            return op1.GreaterOrEqual(Multiply(op2));
+        }
+
+        private static string Format(string input)
+        {
+            string preProcessed = input.Trim().Replace(" ", "").Replace(",", ""); //去掉空格和逗号
+            if (preProcessed.Contains('.'))
+            {
+                for (int i = preProcessed.IndexOf('.') + 1; i < preProcessed.Length; i++)
+                {
+                    if (preProcessed[i] != '0')
+                    {
+                        throw new FormatException("无法处理小数.");
+                    }
+                }
+                //小数位均为0，抹掉小数
+            }
+            bool isNegative = false;
+            bool findValid = false;
+            StringBuilder va = (preProcessed.Contains('.')) ? new StringBuilder(preProcessed.Split('.')[0]) : new StringBuilder(preProcessed);
+
+            for (int i = 0; i < va.Length; i++)
+            {
+                switch (va[i])
+                {
+                    case '+':
+                        va[i] = ' ';
+                        break;
+                    case '-':
+                        isNegative = !isNegative;
+                        va[i] = ' ';
+                        break;
+                    case ' ':
+                        break;
+                    default:
+                        findValid = true;
+                        break;
+                }
+                if (findValid)
+                {
+                    break;
+                }
+            }
+            va = va.Replace(" ", "");
+            if (isNegative)
+            {
+                va.Insert(0, '-');
+            }
+            return va.ToString();
         }
 
         public override string ToString()
@@ -347,11 +443,40 @@ namespace Uly.Numerics
             return (GetLast(list) == 9999);
         }
 
+        /// <summary>
+        /// 是否为正值
+        /// </summary>
+        /// <returns></returns>
+        private bool IsPositive()
+        {
+            return (GetLast(_value) == 0) && (!this.IsZero());
+        }
+
+        /// <summary>
+        /// 是否为负值
+        /// </summary>
+        /// <returns></returns>
         public bool IsNegative()
         {
             return (GetLast(_value) == 9999);
         }
-        
+
+        /// <summary>
+        /// 是否为零
+        /// </summary>
+        /// <returns></returns>
+        public bool IsZero()
+        {
+            foreach (var i in _value)
+            {
+                if (i != 0)
+                {
+                    return false;
+                }
+            }
+            return true;
+        }
+
         /// <summary>
         /// 转换为补码表示
         /// </summary>
@@ -359,10 +484,13 @@ namespace Uly.Numerics
         /// <returns></returns>
         private static List<int> ToComplement(List<int> value)
         {
-            List<int> comp = new List<int>();
+            List<int> comp = new List<int>(value.Count);
+            int tmp = 9999;
             foreach (var i in value)
             {
+                //tmp = 9999 - i;
                 comp.Add(9999 - i);
+                //((9999 - i)>=0)?comp.Add(9999 - i):comp.Add(19999 - i);
             }
             comp[0] = comp[0] + 1;
             return comp;
@@ -391,7 +519,9 @@ namespace Uly.Numerics
                 _value.RemoveRange(valueLength,_value.Count - valueLength);
             }
         }
+        #endregion
 
+        #region 运算符重载
         public static BigInteger operator +(BigInteger op1, BigInteger op2)
         {
             return op1.Add(op2);
@@ -410,6 +540,16 @@ namespace Uly.Numerics
         public static BigInteger operator /(BigInteger op1, BigInteger op2)
         {
             return op1.Divide(op2);
+        }
+
+        public static bool operator >(BigInteger op1, BigInteger op2)
+        {
+            return op1.Substract(op2).IsPositive();
+        }
+
+        public static bool operator <(BigInteger op1, BigInteger op2)
+        {
+            return op1.Substract(op2).IsNegative();
         }
 
         public override bool Equals(object obj)
@@ -434,5 +574,6 @@ namespace Uly.Numerics
         {
             return !(op1 == op2);
         }
+        #endregion
     }
 }

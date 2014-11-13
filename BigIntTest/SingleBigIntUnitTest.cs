@@ -7,9 +7,11 @@ using System.Diagnostics;
 
 namespace BigIntTest
 {
-
+    /// <summary>
+    /// 单项单元测试
+    /// </summary>
     [TestClass]
-    public class AutoBigIntUnitTest
+    public class SingleBigIntUnitTest
     {
         private string s1, s2;
         BigInteger op1,op2;
@@ -21,8 +23,8 @@ namespace BigIntTest
         [TestInitialize]
         public void Init()
         {
-            s1 = "999999999999999999";
-            s2 = "-3";
+            s1 = "999999999999999999999999999999";
+            s2 = "-9999.0";
             op1 = new BigInteger(s1);
             op2 = new BigInteger(s2);
             cop1 = MSBigInt.Parse(s1);
@@ -118,7 +120,22 @@ namespace BigIntTest
             _timer.Stop();
             Console.WriteLine(_timer.ElapsedTicks);
             _timer.Reset();
-            
+        }
+
+        [TestMethod]
+        public void TestGreaterLess()
+        {
+            _timer.Start();
+            Assert.IsFalse((op1 > op2) ^ (cop1 > cop2)); //异或，两者相同则为False
+            _timer.Stop();
+            Console.WriteLine(_timer.ElapsedTicks);
+            _timer.Reset();
+
+            _timer.Start();
+            Assert.IsFalse((op1 < op2) ^ (cop1 < cop2)); //异或，两者相同则为False
+            _timer.Stop();
+            Console.WriteLine(_timer.ElapsedTicks);
+            _timer.Reset();
         }
     }
 }

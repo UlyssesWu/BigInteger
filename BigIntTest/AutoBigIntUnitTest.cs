@@ -4,15 +4,26 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Uly.Numerics;
 using MSBigInt = System.Numerics.BigInteger;
 using System.Diagnostics;
+using System.IO;
 
 namespace BigIntTest
 {
 
+    /// <summary>
+    /// 批量单元测试
+    /// </summary>
     [TestClass]
-    public class SingleBigIntUnitTest
+    public class AutoBigIntUnitTest
     {
         BigInteger op1,op2;
         MSBigInt cop1,cop2;
+        //List<BigInteger> op1s = new List<BigInteger>();
+        //List<BigInteger> op2s = new List<BigInteger>();
+        //List<MSBigInt> cop1s = new List<MSBigInt>();
+        //List<MSBigInt> cop2s = new List<MSBigInt>();
+        private List<string> info = new List<string>();
+        private List<string> iop1s = new List<string>();
+        private List<string> iop2s = new List<string>(); 
         private string ans1, ans2;
 
         private Stopwatch _timer = new Stopwatch();
@@ -20,100 +31,275 @@ namespace BigIntTest
         [TestInitialize]
         public void Init()
         {
-            op1 = new BigInteger("999999999999999999");
-            op2 = new BigInteger("0");
-            cop1 = MSBigInt.Parse(op1.ToString());
-            cop2 = MSBigInt.Parse(op2.ToString());
+            string[] inputs = File.ReadAllLines("TestInput.txt");
+            for (int i = 0; i < inputs.Length; i=i+3)
+            {
+                info.Add(inputs[i]);
+                //op1s.Add(new BigInteger(inputs[i + 1]));
+                //cop1s.Add(MSBigInt.Parse(inputs[i + 1]));
+                iop1s.Add(inputs[i + 1]);
+                //op2s.Add(new BigInteger(inputs[i + 2]));
+                //cop2s.Add(MSBigInt.Parse(inputs[i + 2]));
+                iop2s.Add(inputs[i + 2]);
+            }
             _timer.Reset();
             _nanoSecPerTick = (1000L * 1000L * 1000L) / Stopwatch.Frequency;
             Console.WriteLine("时间单位：Tick（每Tick为 " + _nanoSecPerTick + " 纳秒）");
             Console.WriteLine("1毫秒 = " + 1000000/_nanoSecPerTick + " Tick");
         }
 
+        private int CheckInput(int i)
+        {
+            bool msFailed = false;
+            bool ulyFailed = false;
+            Exception msException = null;
+            Exception ulyException = null;
+            Console.WriteLine("op1:" + iop1s[i]);
+            Console.WriteLine("op2:" + iop2s[i]);
+            try
+            {
+                cop1 = MSBigInt.Parse(iop1s[i]);
+                cop2 = MSBigInt.Parse(iop2s[i]);
+            }
+            catch (Exception e)
+            {
+                msException = e;
+                msFailed = true;
+                Console.WriteLine("System.Numerics.BigInteger抛出解析异常");
+            }
+            try
+            {
+                op1 = new BigInteger(iop1s[i]);
+                op2 = new BigInteger(iop2s[i]);
+            }
+            catch (Exception e)
+            {
+                ulyException = e;
+                ulyFailed = true;
+                Console.WriteLine("Uly.Numerics.BigInteger抛出解析异常");
+            }
+            if (ulyFailed)
+            {
+                if (!msFailed)
+                {
+                    //微软能正常解析而本库不能
+                    throw new AssertFailedException(string.Format("目标库的行为与对照组不一致，于第{0}组测试失败:{1}",i,info[i]));
+                }
+                else
+                {
+                    //两种库都不能解析
+                    Assert.AreSame(msException, ulyException, string.Format("目标库的抛出的异常与对照组不一致，于第{0}组测试失败:{1}", i, info[i]));
+                    if (msException.GetType() == ulyException.GetType())
+                    {
+                        Console.WriteLine(string.Format("目标库与对照组抛出了相同的异常，测试成功:{0}", msException));
+                        return -1;  //跳过此组测试的剩余内容
+                    }
+                    else
+                    {
+                        throw new AssertFailedException(string.Format("目标库的行为与对照组不一致，于第{0}组测试失败:{1}", i, info[i]));
+                    }
+                }
+            }
+            else
+            {
+                if (msFailed)
+                {
+                    //本库能解析而微软库不能
+                    Console.WriteLine("对照组无法解析此组数据！尝试将目标库解析后的数据赋值给对照组...");
+                    try
+                    {
+                        cop1 = MSBigInt.Parse(op1.ToString());
+                        cop2 = MSBigInt.Parse(op2.ToString());
+                    }
+                    catch (Exception e)
+                    {
+                        Console.WriteLine("对照组已经无法解析此组数据！缺乏对照组，本轮测试将跳过!");
+                        return 0;//只使用目标库运算
+                    }
+                }
+            }
+
+            return 1; //两组数据均没有问题
+        }
 
         [TestMethod]
         public void TestAdd()
         {
-            _timer.Start();
-            ans1 = (op1 + op2).ToString();
-            _timer.Stop();
-            Console.WriteLine(_timer.ElapsedTicks);
-            _timer.Reset();
-
-            _timer.Start();
-            ans2 = (cop1 + cop2).ToString();
-            _timer.Stop();
-            Console.WriteLine(_timer.ElapsedTicks);
-            _timer.Reset();
-            Assert.AreEqual(ans1,ans2);
+            for (int i = 0; i < info.Count; i++)
+            {
+                Console.WriteLine("[正在执行加法测试]" + info[i]);
+                int flag = CheckInput(i);
+                if (flag>=0)
+                {
+                    _timer.Start();
+                    ans1 = (op1 + op2).ToString();
+                    _timer.Stop();
+                    Console.WriteLine("目标库用时:" + _timer.ElapsedTicks);
+                    _timer.Reset();
+                }
+                if (flag > 0)
+                {
+                    _timer.Start();
+                    ans2 = (cop1 + cop2).ToString();
+                    _timer.Stop();
+                    Console.WriteLine("对照组用时:" + _timer.ElapsedTicks);
+                    _timer.Reset();
+                    Assert.AreEqual(ans2, ans1);
+                }
+                if (flag == 0)
+                {
+                    Console.WriteLine("对照组表示看不懂这组数据");
+                }
+            }
         }
 
         [TestMethod]
         public void TestSub()
         {
-            _timer.Start();
-            ans1 = (op1 - op2).ToString();
-            _timer.Stop();
-            Console.WriteLine(_timer.ElapsedTicks);
-            _timer.Reset();
-
-            _timer.Start();
-            ans2 = (cop1 - cop2).ToString();
-            _timer.Stop();
-            Console.WriteLine(_timer.ElapsedTicks);
-            _timer.Reset();
-            Assert.AreEqual(ans1, ans2);
+            for (int i = 0; i < info.Count; i++)
+            {
+                Console.WriteLine("[正在执行减法测试]" + info[i]);
+                int flag = CheckInput(i);
+                if (flag >= 0)
+                {
+                    _timer.Start();
+                    ans1 = (op1 - op2).ToString();
+                    _timer.Stop();
+                    Console.WriteLine("目标库用时:" + _timer.ElapsedTicks);
+                    _timer.Reset();
+                }
+                if (flag > 0)
+                {
+                    _timer.Start();
+                    ans2 = (cop1 - cop2).ToString();
+                    _timer.Stop();
+                    Console.WriteLine("对照组用时:" + _timer.ElapsedTicks);
+                    _timer.Reset();
+                    Assert.AreEqual(ans2, ans1);
+                }
+                if (flag == 0)
+                {
+                    Console.WriteLine("对照组表示看不懂这组数据");
+                }
+            }
         }
 
         [TestMethod]
         public void TestMul()
         {
-            _timer.Start();
-            ans1 = (op1 * op2).ToString();
-            _timer.Stop();
-            Console.WriteLine(_timer.ElapsedTicks);
-            _timer.Reset();
-
-            _timer.Start();
-            ans2 = (cop1 * cop2).ToString();
-            _timer.Stop();
-            Console.WriteLine(_timer.ElapsedTicks);
-            _timer.Reset();
-            Assert.AreEqual(ans1, ans2);
+            for (int i = 0; i < info.Count; i++)
+            {
+                Console.WriteLine("[正在执行乘法测试]" + info[i]);
+                int flag = CheckInput(i);
+                if (flag >= 0)
+                {
+                    _timer.Start();
+                    ans1 = (op1 * op2).ToString();
+                    _timer.Stop();
+                    Console.WriteLine("目标库用时:" + _timer.ElapsedTicks);
+                    _timer.Reset();
+                }
+                if (flag > 0)
+                {
+                    _timer.Start();
+                    ans2 = (cop1 * cop2).ToString();
+                    _timer.Stop();
+                    Console.WriteLine("对照组用时:" + _timer.ElapsedTicks);
+                    _timer.Reset();
+                    Assert.AreEqual(ans2, ans1);
+                }
+                if (flag == 0)
+                {
+                    Console.WriteLine("对照组表示看不懂这组数据");
+                }
+            }
         }
 
         [TestMethod]
         public void TestDiv()
         {
-            _timer.Start();
-            ans1 = (op1 / op2).ToString();
-            _timer.Stop();
-            Console.WriteLine(_timer.ElapsedTicks);
-            _timer.Reset();
-            
-            _timer.Start();
-            ans2 = (cop1 / cop2).ToString();
-            _timer.Stop();
-            Console.WriteLine(_timer.ElapsedTicks);
-            _timer.Reset();
-            Assert.AreEqual(ans1, ans2);
+            for (int i = 0; i < info.Count; i++)
+            {
+                Console.WriteLine("[正在执行除法测试]" + info[i]);
+                int flag = CheckInput(i);
+                if (flag >= 0)
+                {
+                    _timer.Start();
+                    ans1 = (op1 / op2).ToString();
+                    _timer.Stop();
+                    Console.WriteLine("目标库用时:" + _timer.ElapsedTicks);
+                    _timer.Reset();
+                }
+                if (flag > 0)
+                {
+                    _timer.Start();
+                    ans2 = (cop1 / cop2).ToString();
+                    _timer.Stop();
+                    Console.WriteLine("对照组用时:" + _timer.ElapsedTicks);
+                    _timer.Reset();
+                    Assert.AreEqual(ans2, ans1);
+                }
+                if (flag == 0)
+                {
+                    Console.WriteLine("对照组表示看不懂这组数据");
+                }
+            }
         }
 
         [TestMethod]
         public void TestEqual()
         {
-            _timer.Start();
-            Assert.IsTrue(op1 == cop1);
-            _timer.Stop();
-            Console.WriteLine(_timer.ElapsedTicks);
-            _timer.Reset();
+            for (int i = 0; i < info.Count; i++)
+            {
+                Console.WriteLine("[正在执行相等测试]" + info[i]);
+                int flag = CheckInput(i);
+                if (flag > 0)
+                {
+                    _timer.Start();
+                    Assert.IsTrue(op1 == cop1);
+                    _timer.Stop();
+                    Console.WriteLine("第一组用时:" + _timer.ElapsedTicks);
+                    _timer.Reset();
 
-            _timer.Start();
-            Assert.IsTrue(op2 == cop2);
-            _timer.Stop();
-            Console.WriteLine(_timer.ElapsedTicks);
-            _timer.Reset();
-            
+                    _timer.Start();
+                    Assert.IsTrue(op2 == cop2);
+                    _timer.Stop();
+                    Console.WriteLine("第二组用时:" + _timer.ElapsedTicks);
+                    _timer.Reset();
+                }
+                else
+                {
+                    Console.WriteLine("本组已经跳过");
+                }
+            }
+        }
+
+        [TestMethod]
+        public void TestGreaterLess()
+        {
+            for (int i = 0; i < info.Count; i++)
+            {
+                Console.WriteLine("[正在执行大于小于测试]" + info[i]);
+                int flag = CheckInput(i);
+                if (flag > 0)
+                {
+                    _timer.Start();
+                    Assert.IsFalse((op1 > op2) ^ (cop1 > cop2)); //异或，两者相同则为False
+                    _timer.Stop();
+                    Console.WriteLine("第一组用时:" + _timer.ElapsedTicks);
+                    _timer.Reset();
+
+                    _timer.Start();
+                    Assert.IsFalse((op1 < op2) ^ (cop1 < cop2)); //异或，两者相同则为False
+                    _timer.Stop();
+                    Console.WriteLine("第二组用时:" + _timer.ElapsedTicks);
+                    _timer.Reset();
+                }
+                else
+                {
+                    Console.WriteLine("本组已经跳过");
+                }
+            }
         }
     }
 }

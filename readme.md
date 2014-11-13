@@ -1,15 +1,15 @@
-
+ï»¿
 #Uly.Numerics.BigInteger
 A simple C# BigInteger Lib with poor performance only for educational purpose.
 
-Ò»¸ö¼òÒ×¶øµÍĞ§µÄ³¤ÕûÊıÔËËã¿â¡£½öÓÃÓÚ½ÌÓıÄ¿µÄ£¨Ëµ°×ÁË£¬¾ÍÊÇ×÷Òµ£©¡£
+ä¸€ä¸ªç®€æ˜“è€Œä½æ•ˆçš„é•¿æ•´æ•°è¿ç®—åº“ã€‚ä»…ç”¨äºæ•™è‚²ç›®çš„ï¼ˆè¯´ç™½äº†ï¼Œå°±æ˜¯ä½œä¸šï¼‰ã€‚
 
  
-##Reference ²Î¿¼ÎÄÏ×
+##Reference å‚è€ƒæ–‡çŒ®
 
 
-* [³¬éLÕû”µß\Ëã£¨´ó”µß\Ëã£©](http://www.openhome.cc/Gossip/AlgorithmGossip/BigNumber.htm) µÍĞ§µ«Ò×¶®¡£
-* [[CodeProject]C# BigInteger Class](http://www.codeproject.com/Articles/2728/C-BigInteger-Class) ¸ßĞ§µ«Àí½âÀ§ÄÑ¡£
+* [è¶…é•·æ•´æ•¸é‹ç®—ï¼ˆå¤§æ•¸é‹ç®—ï¼‰](http://www.openhome.cc/Gossip/AlgorithmGossip/BigNumber.htm) ä½æ•ˆä½†æ˜“æ‡‚ã€‚
+* [[CodeProject]C# BigInteger Class](http://www.codeproject.com/Articles/2728/C-BigInteger-Class) é«˜æ•ˆä½†ç†è§£å›°éš¾ã€‚
 
 
 by Ulysses
