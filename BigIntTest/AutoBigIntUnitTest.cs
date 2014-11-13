@@ -34,6 +34,10 @@ namespace BigIntTest
             string[] inputs = File.ReadAllLines("TestInput.txt");
             for (int i = 0; i < inputs.Length; i=i+3)
             {
+                if (inputs[i].StartsWith("//"))
+                {
+                    continue;
+                }
                 info.Add(inputs[i]);
                 //op1s.Add(new BigInteger(inputs[i + 1]));
                 //cop1s.Add(MSBigInt.Parse(inputs[i + 1]));
@@ -88,10 +92,11 @@ namespace BigIntTest
                 else
                 {
                     //两种库都不能解析
-                    Assert.AreSame(msException, ulyException, string.Format("目标库的抛出的异常与对照组不一致，于第{0}组测试失败:{1}", i, info[i]));
+                    //Assert.AreSame(msException, ulyException);
+                    Assert.AreSame(msException.GetType(), ulyException.GetType(), string.Format("目标库的抛出的异常与对照组不一致，于第{0}组测试失败:{1}", i, info[i]));
                     if (msException.GetType() == ulyException.GetType())
                     {
-                        Console.WriteLine(string.Format("目标库与对照组抛出了相同的异常，测试成功:{0}", msException));
+                        Console.WriteLine(string.Format("目标库与对照组抛出了相同的异常，测试成功:{0} VS {1}", ulyException.Message, msException.Message));
                         return -1;  //跳过此组测试的剩余内容
                     }
                     else
@@ -218,26 +223,48 @@ namespace BigIntTest
         [TestMethod]
         public void TestDiv()
         {
+            Exception ulyException;
             for (int i = 0; i < info.Count; i++)
             {
+                ulyException = null;
                 Console.WriteLine("[正在执行除法测试]" + info[i]);
                 int flag = CheckInput(i);
-                if (flag >= 0)
+                try
                 {
-                    _timer.Start();
-                    ans1 = (op1 / op2).ToString();
-                    _timer.Stop();
-                    Console.WriteLine("目标库用时:" + _timer.ElapsedTicks);
-                    _timer.Reset();
+                    if (flag >= 0)
+                    {
+                        _timer.Start();
+                        ans1 = (op1 / op2).ToString();
+                        _timer.Stop();
+                        Console.WriteLine("目标库用时:" + _timer.ElapsedTicks);
+                        _timer.Reset();
+                    }
                 }
-                if (flag > 0)
+                catch (Exception e)
                 {
-                    _timer.Start();
-                    ans2 = (cop1 / cop2).ToString();
-                    _timer.Stop();
-                    Console.WriteLine("对照组用时:" + _timer.ElapsedTicks);
-                    _timer.Reset();
-                    Assert.AreEqual(ans2, ans1);
+                    ulyException = e;
+                    Console.WriteLine(string.Format("Uly.Numerics.BigInteger抛出了异常:{0}", e.Message));
+                    Assert.IsInstanceOfType(e,typeof(DivideByZeroException),"抛出的异常不是除以零异常");
+                }
+                try
+                {
+                    if (flag > 0)
+                    {
+                        _timer.Start();
+                        ans2 = (cop1 / cop2).ToString();
+                        _timer.Stop();
+                        Console.WriteLine("对照组用时:" + _timer.ElapsedTicks);
+                        _timer.Reset();
+                        Assert.AreEqual(ans2, ans1);
+                    }
+                }
+                catch (Exception e)
+                {
+                    if (ulyException != null)
+                    {
+                        Assert.AreSame(e.GetType(),ulyException.GetType());//必须抛出一样的异常
+                    }
+                    Console.WriteLine(string.Format("System.Numerics.BigInteger抛出了异常:{0}", e.Message));
                 }
                 if (flag == 0)
                 {

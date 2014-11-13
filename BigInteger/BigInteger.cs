@@ -114,7 +114,7 @@ namespace Uly.Numerics
                 }
                 else
                 {
-                    result.Clear(); //负数加法运算溢位得零
+                    //负数加法运算溢位得零 //FIXED:谁能告诉我我写的啥
                 }
                 for (int i = 0; i < 8; i++)
                 {
@@ -173,7 +173,7 @@ namespace Uly.Numerics
                 }
                 else
                 {
-                    result.Clear(); //正数减法溢位为0
+                    //正数减法溢位为0 //FIXED：我这写的是啥
                 }
                 for (int i = 0; i < 8; i++)
                 {
@@ -284,7 +284,7 @@ namespace Uly.Numerics
         {
             if (that.IsZero())
             {
-                throw new DivideByZeroException("除数不能为0.");
+                throw new DivideByZeroException("除数不能为0。");
             }
             //如果除数为int型,直接除,效率高
             int parsed;
@@ -325,7 +325,7 @@ namespace Uly.Numerics
         {
             if (that == 0)
             {
-                throw new DivideByZeroException("除数不能为0.");
+                throw new DivideByZeroException("除数不能为0。");
             }
             if ((that > 0 && this.IsNegative()) || (that < 0) && this.IsPositive())
             {
@@ -365,7 +365,7 @@ namespace Uly.Numerics
                 {
                     if (preProcessed[i] != '0')
                     {
-                        throw new FormatException("无法处理小数.");
+                        throw new FormatException("无法处理小数。");
                     }
                 }
                 //小数位均为0，抹掉小数
