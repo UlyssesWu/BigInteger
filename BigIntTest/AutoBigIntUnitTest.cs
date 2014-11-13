@@ -52,6 +52,11 @@ namespace BigIntTest
             Console.WriteLine("1毫秒 = " + 1000000/_nanoSecPerTick + " Tick");
         }
 
+        /// <summary>
+        /// 检查构造阶段是否能抛出正确的异常
+        /// </summary>
+        /// <param name="i"></param>
+        /// <returns></returns>
         private int CheckInput(int i)
         {
             bool msFailed = false;
@@ -69,7 +74,7 @@ namespace BigIntTest
             {
                 msException = e;
                 msFailed = true;
-                Console.WriteLine("System.Numerics.BigInteger抛出解析异常");
+                Console.WriteLine("System.Numerics.BigInteger抛出解析异常:{0}", e.Message);
             }
             try
             {
@@ -80,29 +85,26 @@ namespace BigIntTest
             {
                 ulyException = e;
                 ulyFailed = true;
-                Console.WriteLine("Uly.Numerics.BigInteger抛出解析异常");
+                Console.WriteLine("Uly.Numerics.BigInteger抛出解析异常:{0}", e.Message);
             }
             if (ulyFailed)
             {
                 if (!msFailed)
                 {
-                    //微软能正常解析而本库不能
-                    throw new AssertFailedException(string.Format("目标库的行为与对照组不一致，于第{0}组测试失败:{1}",i,info[i]));
+                    //微软能正常解析而本库不能,直接失败
+                    Assert.Fail("目标库的行为与对照组不一致，于第{0}组测试失败:{1}", i, info[i]);
                 }
                 else
                 {
-                    //两种库都不能解析
+                    //两种库都不能解析,必须抛出相同的异常
                     //Assert.AreSame(msException, ulyException);
                     Assert.AreSame(msException.GetType(), ulyException.GetType(), string.Format("目标库的抛出的异常与对照组不一致，于第{0}组测试失败:{1}", i, info[i]));
                     if (msException.GetType() == ulyException.GetType())
                     {
-                        Console.WriteLine(string.Format("目标库与对照组抛出了相同的异常，测试成功:{0} VS {1}", ulyException.Message, msException.Message));
+                        Console.WriteLine("目标库与对照组抛出了相同的异常，测试成功:{0} VS {1}", ulyException.Message, msException.Message);
                         return -1;  //跳过此组测试的剩余内容
                     }
-                    else
-                    {
-                        throw new AssertFailedException(string.Format("目标库的行为与对照组不一致，于第{0}组测试失败:{1}", i, info[i]));
-                    }
+                    Assert.Fail("目标库的行为与对照组不一致，于第{0}组测试失败:{1}", i, info[i]);
                 }
             }
             else
@@ -116,7 +118,7 @@ namespace BigIntTest
                         cop1 = MSBigInt.Parse(op1.ToString());
                         cop2 = MSBigInt.Parse(op2.ToString());
                     }
-                    catch (Exception e)
+                    catch (Exception)
                     {
                         Console.WriteLine("对照组已经无法解析此组数据！缺乏对照组，本轮测试将跳过!");
                         return 0;//只使用目标库运算
@@ -243,7 +245,7 @@ namespace BigIntTest
                 catch (Exception e)
                 {
                     ulyException = e;
-                    Console.WriteLine(string.Format("Uly.Numerics.BigInteger抛出了异常:{0}", e.Message));
+                    Console.WriteLine("Uly.Numerics.BigInteger抛出了异常:{0}", e.Message);
                     Assert.IsInstanceOfType(e,typeof(DivideByZeroException),"抛出的异常不是除以零异常");
                 }
                 try
@@ -260,11 +262,15 @@ namespace BigIntTest
                 }
                 catch (Exception e)
                 {
+                    if (e is AssertFailedException)
+                    {
+                        throw e;
+                    }
                     if (ulyException != null)
                     {
                         Assert.AreSame(e.GetType(),ulyException.GetType());//必须抛出一样的异常
                     }
-                    Console.WriteLine(string.Format("System.Numerics.BigInteger抛出了异常:{0}", e.Message));
+                    Console.WriteLine("System.Numerics.BigInteger抛出了异常:{0}", e.Message);
                 }
                 if (flag == 0)
                 {

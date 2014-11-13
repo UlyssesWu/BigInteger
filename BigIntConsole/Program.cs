@@ -10,8 +10,9 @@ namespace BigIntConsole
     {
         static void Main(string[] args)
         {
-            BigInteger a = new BigInteger("--1234567890");
-            BigInteger b = new BigInteger("---9876543210");
+            Console.WriteLine(int.MaxValue);
+            BigInteger a = new BigInteger(" 1111111 00000000 1111111");
+            BigInteger b = new BigInteger("12345 67890 ");
             Console.WriteLine(string.Format("op1:{0}   op2:{1}",a,b));
             Console.WriteLine(a + b);
             Console.WriteLine(a - b);

@@ -46,7 +46,10 @@ namespace Uly.Numerics
             }
             catch (Exception e)
             {
-                throw e;
+                if (e.GetType() == typeof(FormatException))
+                {
+                    throw new FormatException("输入字符串的格式不正确。",e);
+                }
             }
             //将位数补为8的整数倍
             int valueLength = (_value.Count/8 + 1)*8; //Count相当于Java中的size()
@@ -260,12 +263,12 @@ namespace Uly.Numerics
         private BigInteger Div(int that)
         {
             List<int> result = new List<int>();
-            int remain = 0; //余数
+            long remain = 0; //余数
             for (int i = _value.Count -1; i > -1; i--)
             {
-                int tmp = _value[i] + remain;
-                result.Add(tmp / that);
-                remain = (tmp%that) * 10000;
+                long tmp = _value[i] + remain;
+                result.Add((int)(tmp / that));
+                remain = (tmp%that) * 10000;    //为确保此步不会溢出，必须用long型
             }
             result.Reverse();
             for (int i = 0; i < 8 - (result.Count) % 8; i++)
@@ -373,7 +376,7 @@ namespace Uly.Numerics
             bool isNegative = false;
             bool findValid = false;
             StringBuilder va = (preProcessed.Contains('.')) ? new StringBuilder(preProcessed.Split('.')[0]) : new StringBuilder(preProcessed);
-
+            //去掉多余的运算符
             for (int i = 0; i < va.Length; i++)
             {
                 switch (va[i])
