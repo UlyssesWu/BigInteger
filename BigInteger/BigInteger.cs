@@ -10,11 +10,14 @@ namespace Uly.Numerics
     /// </summary>
     public class BigInteger
     {
-        //private const int DIVIDE_LENGTH = 4;
-        //private int _blockMaxNumber = (int)Math.Pow(10, DIVIDE_LENGTH);
         private List<int> _value;
 
         //private static BigInteger _one = new BigInteger("1");
+
+        /// <summary>
+        /// 零
+        /// </summary>
+        public static BigInteger Zero = new BigInteger("0");
 
         /// <summary>
         /// 原始数据表示
@@ -24,7 +27,7 @@ namespace Uly.Numerics
         }
 
         #region 构造函数
-        public BigInteger(string val)
+        public BigInteger(string val = "0")
         {
             string va = Format(val);
             string v = (va[0] == '-') ? va.Substring(1) : va;
@@ -50,6 +53,7 @@ namespace Uly.Numerics
                 {
                     throw new FormatException("输入字符串的格式不正确。",e);
                 }
+                throw;
             }
             //将位数补为8的整数倍
             int valueLength = (_value.Count/8 + 1)*8; //Count相当于Java中的size()
@@ -117,7 +121,7 @@ namespace Uly.Numerics
                 }
                 else
                 {
-                    //负数加法运算溢位得零 //FIXED:谁能告诉我我写的啥
+                    //result.Add(0);//负数加法运算溢位得零 //FIXED:谁能告诉我我写的啥
                 }
                 for (int i = 0; i < 8; i++)
                 {
@@ -172,11 +176,11 @@ namespace Uly.Numerics
             {
                 if (IsNegative(op1))
                 {
-                    result.Add(9998); //MARK
+                    result.Add(9998); //e.g. -200-900 = -1100
                 }
                 else
                 {
-                    //正数减法溢位为0 //FIXED：我这写的是啥
+                    //result.Add(0);//正数减法溢位为0 //FIXED：我这写的是啥
                 }
                 for (int i = 0; i < 8; i++)
                 {
@@ -285,6 +289,7 @@ namespace Uly.Numerics
         /// <returns></returns>
         public BigInteger Divide(BigInteger that)
         {
+            //MARK:注意除法不会四舍五入，只会保留整数位
             if (that.IsZero())
             {
                 throw new DivideByZeroException("除数不能为0。");
@@ -297,10 +302,29 @@ namespace Uly.Numerics
     ? new BigInteger(ToComplement(Div(Math.Abs(parsed)).RawValue))
     : Div(Math.Abs(parsed));
             }
+            
             //除数不是int型,暴力二分搜索
             //一律先以正数表示
             BigInteger op1 = IsNegative(_value) ? new BigInteger(ToComplement(_value)) : this;
             BigInteger op2 = IsNegative(that.RawValue) ? new BigInteger(ToComplement(that.RawValue)) : that;
+            op1.Shorten();
+            op2.Shorten();
+            //暴力二分搜索之前的挣扎:除法转减法
+            if ((op1.ToString().Length - op2.ToString().Length < 10) || (op1.RawValue.Count > 127 && (op1.ToString().Length - op2.ToString().Length < 1000))) //只对超长数且位数接近者生效
+            {
+                long ans = 0;
+                BigInteger remain = op1.Substract(op2);
+                while (remain >= Zero)
+                {
+                    ans++;
+                    remain = remain.Substract(op2);
+                }
+
+                return (GetLast(_value) + GetLast(that.RawValue) == 9999)
+                ? new BigInteger("-" + ans.ToString())
+                : new BigInteger(ans.ToString());
+            }
+
             BigInteger one = new BigInteger("1");
             BigInteger left = new BigInteger("0");
             BigInteger right = op1;
@@ -334,10 +358,7 @@ namespace Uly.Numerics
             {
                 return new BigInteger(ToComplement(Div(Math.Abs(that)).RawValue));
             }
-            else
-            {
-                return Div(Math.Abs(that));
-            }
+            return Div(Math.Abs(that));
         }
 
         #endregion
@@ -345,7 +366,7 @@ namespace Uly.Numerics
         #region 辅助函数
         private bool GreaterOrEqual(BigInteger that)
         {
-            return IsNegative(Substract(that).RawValue) ? false : true;
+            return !IsNegative(Substract(that).RawValue);
         }
 
         /// <summary>
@@ -488,7 +509,6 @@ namespace Uly.Numerics
         private static List<int> ToComplement(List<int> value)
         {
             List<int> comp = new List<int>(value.Count);
-            int tmp = 9999;
             foreach (var i in value)
             {
                 //tmp = 9999 - i;
@@ -496,6 +516,17 @@ namespace Uly.Numerics
                 //((9999 - i)>=0)?comp.Add(9999 - i):comp.Add(19999 - i);
             }
             comp[0] = comp[0] + 1;
+            int j = 0;
+            //末位加1后的进位
+            while (comp[j]>9999)
+            {
+                comp[j] = comp[j] - 10000;
+                if (j + 1 < comp.Count)
+                {
+                    comp[j + 1] = comp[j + 1] + 1;
+                    j++;
+                }
+            }
             return comp;
         }
 
@@ -550,9 +581,21 @@ namespace Uly.Numerics
             return op1.Substract(op2).IsPositive();
         }
 
+        public static bool operator >=(BigInteger op1, BigInteger op2)
+        {
+            var ans = op1.Substract(op2);
+            return (ans.IsPositive() || ans.IsZero());
+        }
+
         public static bool operator <(BigInteger op1, BigInteger op2)
         {
             return op1.Substract(op2).IsNegative();
+        }
+
+        public static bool operator <=(BigInteger op1, BigInteger op2)
+        {
+            var ans = op1.Substract(op2);
+            return (ans.IsNegative() || ans.IsZero());
         }
 
         public override bool Equals(object obj)
@@ -568,6 +611,7 @@ namespace Uly.Numerics
 
         public static bool operator ==(BigInteger op1, object op2)
         {
+            //op1可能引发NullReferenceException.这里允许它抛出此异常
             if (op1.RawValue != null)
             {return op1.Equals(op2);}
             return op2 == null;

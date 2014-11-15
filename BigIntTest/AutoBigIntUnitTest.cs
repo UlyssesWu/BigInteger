@@ -1,4 +1,5 @@
-﻿using System;
+﻿//#define ONLY_TARGET 加入此句则只测试目标库
+using System;
 using System.Collections.Generic;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Uly.Numerics;
@@ -8,7 +9,6 @@ using System.IO;
 
 namespace BigIntTest
 {
-
     /// <summary>
     /// 批量单元测试
     /// </summary>
@@ -125,7 +125,9 @@ namespace BigIntTest
                     }
                 }
             }
-
+#if ONLY_TARGET
+            return 0; //只测试目标库
+#endif
             return 1; //两组数据均没有问题
         }
 
