@@ -51,7 +51,7 @@ namespace Uly.Numerics
             {
                 if (e.GetType() == typeof(FormatException))
                 {
-                    throw new FormatException("输入字符串的格式不正确。",e);
+                    throw new FormatException("未能分析该值。", e);
                 }
                 throw;
             }
@@ -121,7 +121,7 @@ namespace Uly.Numerics
                 }
                 else
                 {
-                    //result.Add(0);//负数加法运算溢位得零 //FIXED:谁能告诉我我写的啥
+                    //负数加法运算溢位得零 //FIXED:谁能告诉我我写的啥
                 }
                 for (int i = 0; i < 8; i++)
                 {
@@ -180,7 +180,7 @@ namespace Uly.Numerics
                 }
                 else
                 {
-                    //result.Add(0);//正数减法溢位为0 //FIXED：我这写的是啥
+                    //正数减法溢位为0 //FIXED：我这写的是啥
                 }
                 for (int i = 0; i < 8; i++)
                 {
@@ -238,7 +238,6 @@ namespace Uly.Numerics
         /// <returns></returns>
         public BigInteger Multiply(BigInteger that)
         {
-            //负数 转为补码表示
             BigInteger op1 = IsNegative(_value) ? new BigInteger(ToComplement(_value)) : this;
             List<int> op2 = IsNegative(that.RawValue) ? ToComplement(that.RawValue) : that.RawValue;
             //逐位运算
@@ -309,8 +308,8 @@ namespace Uly.Numerics
             BigInteger op2 = IsNegative(that.RawValue) ? new BigInteger(ToComplement(that.RawValue)) : that;
             op1.Shorten();
             op2.Shorten();
-            //暴力二分搜索之前的挣扎:除法转减法
-            if ((op1.ToString().Length - op2.ToString().Length < 10) || (op1.RawValue.Count > 127 && (op1.ToString().Length - op2.ToString().Length < 1000))) //只对超长数且位数接近者生效
+            //暴力二分搜索之前的挣扎:除法转减法 //理论上根据Int64的最大值可以推算只要位数差距在17位以内均可以使用，但需要考虑哪种方案效率更高
+            if ((op1.ToString().Length - op2.ToString().Length < 10) || (op1.RawValue.Count > 127 && (op1.ToString().Length - op2.ToString().Length < 10000))) //只对超长数且位数接近者生效
             {
                 long ans = 0;
                 BigInteger remain = op1.Substract(op2);

@@ -17,10 +17,7 @@ namespace BigIntTest
     {
         BigInteger op1,op2;
         MSBigInt cop1,cop2;
-        //List<BigInteger> op1s = new List<BigInteger>();
-        //List<BigInteger> op2s = new List<BigInteger>();
-        //List<MSBigInt> cop1s = new List<MSBigInt>();
-        //List<MSBigInt> cop2s = new List<MSBigInt>();
+
         private List<string> info = new List<string>();
         private List<string> iop1s = new List<string>();
         private List<string> iop2s = new List<string>(); 
@@ -39,11 +36,7 @@ namespace BigIntTest
                     continue;
                 }
                 info.Add(inputs[i]);
-                //op1s.Add(new BigInteger(inputs[i + 1]));
-                //cop1s.Add(MSBigInt.Parse(inputs[i + 1]));
                 iop1s.Add(inputs[i + 1]);
-                //op2s.Add(new BigInteger(inputs[i + 2]));
-                //cop2s.Add(MSBigInt.Parse(inputs[i + 2]));
                 iop2s.Add(inputs[i + 2]);
             }
             _timer.Reset();
@@ -97,7 +90,6 @@ namespace BigIntTest
                 else
                 {
                     //两种库都不能解析,必须抛出相同的异常
-                    //Assert.AreSame(msException, ulyException);
                     Assert.AreSame(msException.GetType(), ulyException.GetType(), string.Format("目标库的抛出的异常与对照组不一致，于第{0}组测试失败:{1}", i, info[i]));
                     if (msException.GetType() == ulyException.GetType())
                     {

@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Uly.Numerics;
+using BigInteger = Uly.Numerics.BigInteger;
 using MSBigInt = System.Numerics.BigInteger;
 using System.Diagnostics;
 
@@ -38,21 +38,21 @@ namespace BigIntTest
         }
 
 
-        [TestMethod]
+        [TestMethod] //测试函数标签表明此函数可以由单元测试引擎执行
         public void TestAdd()
         {
-            _timer.Start();
-            ans1 = (op1 + op2).ToString();
-            _timer.Stop();
-            Console.WriteLine(_timer.ElapsedTicks);
-            _timer.Reset();
+            _timer.Start(); //开始计时
+            ans1 = (op1 + op2).ToString(); //测试组执行计算
+            _timer.Stop(); //结束计时
+            Console.WriteLine(_timer.ElapsedTicks); //输出运算时间
+            _timer.Reset(); //重置计时器
 
             _timer.Start();
-            ans2 = (cop1 + cop2).ToString();
+            ans2 = (cop1 + cop2).ToString(); //对照组执行计算
             _timer.Stop();
             Console.WriteLine(_timer.ElapsedTicks);
             _timer.Reset();
-            Assert.AreEqual(ans1,ans2);
+            Assert.AreEqual(ans2,ans1); //断言两者相等
         }
 
         [TestMethod]
