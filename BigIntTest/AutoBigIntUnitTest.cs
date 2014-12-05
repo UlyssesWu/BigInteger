@@ -56,8 +56,24 @@ namespace BigIntTest
             bool ulyFailed = false;
             Exception msException = null;
             Exception ulyException = null;
-            Console.WriteLine("op1:" + iop1s[i]);
-            Console.WriteLine("op2:" + iop2s[i]);
+            if (iop1s[i].Length > 50)
+            {
+                Console.WriteLine("op1:" + iop1s[i].Substring(0, 10) + "......" + iop1s[i].Substring(iop1s[i].Length - 10, 10) + "[共" + iop1s[i].Length + "位]");
+            }
+            else
+            {
+                Console.WriteLine("op1:" + iop1s[i]);
+            }
+
+            if (iop2s[i].Length > 50)
+            {
+                Console.WriteLine("op2:" + iop2s[i].Substring(0, 10) + "......" + iop2s[i].Substring(iop2s[i].Length - 10, 10) + "[共" + iop2s[i].Length + "位]");
+            }
+            else
+            {
+                Console.WriteLine("op2:" + iop2s[i]);
+            }
+
             try
             {
                 cop1 = MSBigInt.Parse(iop1s[i]);

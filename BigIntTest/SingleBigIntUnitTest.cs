@@ -23,8 +23,8 @@ namespace BigIntTest
         [TestInitialize]
         public void Init()
         {
-            s1 = "999999999999999999999999999999";
-            s2 = "-9999";
+            s1 = "1";
+            s2 = "99999999999999999999999999999999";
             op1 = new BigInteger(s1);
             op2 = new BigInteger(s2);
             cop1 = MSBigInt.Parse(s1);

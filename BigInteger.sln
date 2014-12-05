@@ -9,6 +9,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BigIntTest", "BigIntTest\Bi
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BigIntConsole", "BigIntConsole\BigIntConsole.csproj", "{E0815678-2E25-40B2-B258-8594E9792A14}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BigIntCalcDemo", "BigIntCalcDemo\BigIntCalcDemo.csproj", "{1B065E0E-4600-4600-8622-868B415F6775}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -27,6 +29,10 @@ Global
 		{E0815678-2E25-40B2-B258-8594E9792A14}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{E0815678-2E25-40B2-B258-8594E9792A14}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{E0815678-2E25-40B2-B258-8594E9792A14}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1B065E0E-4600-4600-8622-868B415F6775}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1B065E0E-4600-4600-8622-868B415F6775}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1B065E0E-4600-4600-8622-868B415F6775}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1B065E0E-4600-4600-8622-868B415F6775}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

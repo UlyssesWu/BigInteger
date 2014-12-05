@@ -88,14 +88,17 @@ namespace Uly.Numerics
                 //转为减法
                 return Substract(new BigInteger(ToComplement(that.RawValue)));
             }
+
             //对齐位数
             this.Shorten();
             that.Shorten();
             int length = Math.Max(_value.Count, that.RawValue.Count); //最大长度
             List<int> op1 = new List<int>(_value);
             List<int> op2 = new List<int>(that.RawValue);
-            op1.AddRange(new int[length - op1.Count]);
-            op2.AddRange(new int[length - op2.Count]);
+            //op1.AddRange(new int[length - op1.Count]);
+            //op2.AddRange(new int[length - op2.Count]);    //FIXED:修正补位错误：负数前补位补成了0而不是9999
+            op1.AddRange(ArrayGenerator(length - op1.Count, this.IsNegative()));
+            op2.AddRange(ArrayGenerator(length - op2.Count, that.IsNegative()));
             List<int> result = new List<int>();
             
             int carry = 0; //进位
@@ -147,14 +150,17 @@ namespace Uly.Numerics
             {
                 return Add(new BigInteger(ToComplement(that.RawValue)));
             }
+
             //对齐位数
             this.Shorten();
             that.Shorten();
             int length = Math.Max(_value.Count, that.RawValue.Count);
             List<int> op1 = new List<int>(_value);
             List<int> op2 = new List<int>(that.RawValue);
-            op1.AddRange(new int[length - op1.Count]);
-            op2.AddRange(new int[length - op2.Count]);
+            //op1.AddRange(new int[length - op1.Count]);
+            //op2.AddRange(new int[length - op2.Count]);
+            op1.AddRange(ArrayGenerator(length - op1.Count, this.IsNegative()));
+            op2.AddRange(ArrayGenerator(length - op2.Count, that.IsNegative()));
             List<int> result = new List<int>();
 
             int borrow = 0; //借位
@@ -180,7 +186,7 @@ namespace Uly.Numerics
                 }
                 else
                 {
-                    //正数减法溢位为0 //FIXED：我这写的是啥
+                    //正数减法溢位为0 //FIXED:我这写的是啥
                 }
                 for (int i = 0; i < 8; i++)
                 {
@@ -295,11 +301,28 @@ namespace Uly.Numerics
             }
             //如果除数为int型,直接除,效率高
             int parsed;
+            //FIXED:除int之前要确保转被除数为正数
             if (int.TryParse(that.ToString(), out parsed))
             {
-                return (GetLast(_value) + GetLast(that.RawValue) == 9999)
-    ? new BigInteger(ToComplement(Div(Math.Abs(parsed)).RawValue))
-    : Div(Math.Abs(parsed));
+                if (this.IsNegative() || that.IsNegative())
+                {
+                    if (this.IsNegative() && !that.IsNegative())
+                    {
+                        return new BigInteger(
+                            ToComplement(new BigInteger(ToComplement(this.RawValue)).Div(Math.Abs(parsed)).RawValue));
+                    }
+                    else if(!this.IsNegative() && that.IsNegative())
+                    {
+                        return new BigInteger(
+                            ToComplement(Div(Math.Abs(parsed)).RawValue));
+                    }
+                    else
+                    {
+                        return new BigInteger(
+                            new BigInteger(ToComplement(this.RawValue)).Div(Math.Abs(parsed)).RawValue);
+                    }
+                }
+                return Div(Math.Abs(parsed));
             }
             
             //除数不是int型,暴力二分搜索
@@ -309,7 +332,7 @@ namespace Uly.Numerics
             op1.Shorten();
             op2.Shorten();
             //暴力二分搜索之前的挣扎:除法转减法 //理论上根据Int64的最大值可以推算只要位数差距在17位以内均可以使用，但需要考虑哪种方案效率更高
-            if ((op1.ToString().Length - op2.ToString().Length < 10) || (op1.RawValue.Count > 127 && (op1.ToString().Length - op2.ToString().Length < 10000))) //只对超长数且位数接近者生效
+            if (((op1.RawValue.Count > 127 || op2.RawValue.Count > 127) && (op1.ToString().Length - op2.ToString().Length < 10000 || op1.ToString().Length < op2.ToString().Length))) //只对超长数且位数接近者生效 对于被除数小于除数的情况均可用
             {
                 long ans = 0;
                 BigInteger remain = op1.Substract(op2);
@@ -359,6 +382,31 @@ namespace Uly.Numerics
             }
             return Div(Math.Abs(that));
         }
+
+        //TODO:MOD  ——是否可以实现取余数？
+        //public BigInteger Divide(BigInteger that,out BigInteger remaining)
+        //{
+        //    if (that.IsZero())
+        //    {
+        //        throw new DivideByZeroException("除数不能为0。");
+        //    }
+        //    //一律先以正数表示
+        //    BigInteger op1 = IsNegative(_value) ? new BigInteger(ToComplement(_value)) : this;
+        //    BigInteger op2 = IsNegative(that.RawValue) ? new BigInteger(ToComplement(that.RawValue)) : that;
+        //    op1.Shorten();
+        //    op2.Shorten();
+        //    long ans = 0;
+        //    BigInteger remain = op1.Substract(op2);
+        //    while (remain >= Zero)
+        //    {
+        //        ans++;
+        //        remain = remain.Substract(op2);
+        //    }
+        //    remaining = remain; //BUG
+        //    return (GetLast(_value) + GetLast(that.RawValue) == 9999)
+        //    ? new BigInteger("-" + ans.ToString())
+        //    : new BigInteger(ans.ToString());
+        //}
 
         #endregion
 
@@ -426,6 +474,7 @@ namespace Uly.Numerics
             }
             return va.ToString();
         }
+        
 
         public override string ToString()
         {
@@ -444,11 +493,7 @@ namespace Uly.Numerics
             {
                 return "0";
             }
-            if (IsNegative(_value))
-            {
-                return bigIntBuilder.Insert(0, '-').ToString();
-            }
-            return bigIntBuilder.ToString();
+            return IsNegative(_value) ? bigIntBuilder.Insert(0, '-').ToString() : bigIntBuilder.ToString();
         }
 
         private static int GetLast(List<int> value)
@@ -530,6 +575,23 @@ namespace Uly.Numerics
         }
 
         /// <summary>
+        /// 生成填充用的数组
+        /// </summary>
+        /// <param name="length">数组长度</param>
+        /// <param name="negative">是否为负数用</param>
+        /// <returns></returns>
+        private static int[] ArrayGenerator(int length, bool negative)
+        {
+            int[] ans = new int[length];
+            for (int i = 0; i < length; i++)
+            {
+                ans[i] = negative ? 9999 : 0;
+            }
+            return ans;
+        }
+
+
+        /// <summary>
         /// 收缩源组
         /// </summary>
         private void Shorten()
@@ -537,7 +599,7 @@ namespace Uly.Numerics
             int validCount = _value.Count;
             for (int i = _value.Count -1; i >= 0; i--)
             {
-                if (_value[i]==0)
+                if (_value[i] == 0 || _value[i] == 9999)
                 {
                     validCount--;
                 }
@@ -546,7 +608,7 @@ namespace Uly.Numerics
                     break;
                 }
             }
-            int valueLength = (validCount / 8 + 1) * 8;
+            int valueLength = (validCount / 8 + 2) * 8;
             if (valueLength < _value.Count)
             {
                 _value.RemoveRange(valueLength,_value.Count - valueLength);
@@ -611,6 +673,7 @@ namespace Uly.Numerics
         public static bool operator ==(BigInteger op1, object op2)
         {
             //op1可能引发NullReferenceException.这里允许它抛出此异常
+// ReSharper disable once PossibleNullReferenceException
             if (op1.RawValue != null)
             {return op1.Equals(op2);}
             return op2 == null;
